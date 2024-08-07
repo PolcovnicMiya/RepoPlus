@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from db_settings import settings
-from sqlalchemy.ext.asyncio import create_async_engine,async_session
+from app.settings.db_settings import settings
+from sqlalchemy.ext.asyncio import create_async_engine,async_sessionmaker
 DB_PASS = settings.pg.DB_PASS
 DB_HOST = settings.pg.DB_HOST
 DB_NAME = settings.pg.DB_NAME
@@ -23,7 +23,7 @@ class DataBaseConnection:
             pool_size = self.pool_size,
             max_overflow = self.max_overflow,
             )
-        self.session_factory = async_session(
+        self.session_factory = async_sessionmaker(
             bind = self.async_engine,
             autoflush = False,
             autocommit = False,
