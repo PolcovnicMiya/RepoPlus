@@ -10,9 +10,10 @@ class BD_Settings(BaseSettings):
     DB_PASS : Annotated [str | int , Field (..., env = 'BD_PASS')]
     DB_USER : Annotated [str | int , Field (..., env = 'BD_USER')]
     DB_NAME : Annotated [str | int , Field (..., env = 'BD_NAME')]
+    
 
-    class ENV:
-        env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    # class ENV:
+    #     env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 
 
 db_setting = BD_Settings()
