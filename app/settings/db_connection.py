@@ -38,4 +38,3 @@ class DataBaseConnection:
             yield session
 
 db_session = DataBaseConnection()
-engine = create_async_engine(url = db_session.url)
