@@ -1,4 +1,4 @@
-from base import Base
+from .base import Base
 from sqlalchemy.orm import mapped_column, Mapped
 from datetime import datetime , timezone
 from app.schemas.ReadORM.read_user import ReadUSerModel

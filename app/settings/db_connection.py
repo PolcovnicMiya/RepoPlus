@@ -6,13 +6,13 @@ DB_HOST = settings.pg.DB_HOST
 DB_NAME = settings.pg.DB_NAME
 DB_USER = settings.pg.DB_USER
 DB_PORT = settings.pg.DB_PORT
-
+print(settings.pg.DB_NAME)
 @dataclass
 class DataBaseConnection:
     url : str  = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    echo : bool = False
+    echo : bool = True
     echo_pool : bool = False
-    pool_size : int = 10
+    pool_size : int = 5
     max_overflow : int = 10
 
     def __init__(self):
@@ -38,3 +38,4 @@ class DataBaseConnection:
             yield session
 
 db_session = DataBaseConnection()
+engine = create_async_engine(url = db_session.url)
