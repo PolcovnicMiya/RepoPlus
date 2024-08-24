@@ -1,8 +1,8 @@
-from dataclasses import dataclass
-import os
-from pydantic import Field, BaseModel
-from pydantic_settings import BaseSettings
 from typing import Annotated
+from dataclasses import dataclass
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
 
 class BD_Settings(BaseSettings):
     DB_HOST : Annotated [str | int , Field (..., env = 'BD_HOST')]
@@ -10,7 +10,6 @@ class BD_Settings(BaseSettings):
     DB_PASS : Annotated [str | int , Field (..., env = 'BD_PASS')]
     DB_USER : Annotated [str | int , Field (..., env = 'BD_USER')]
     DB_NAME : Annotated [str | int , Field (..., env = 'BD_NAME')]
-    
 
     # class ENV:
     #     env_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
@@ -30,5 +29,5 @@ class Postgres:
 class Setting:
     def __init__(self):
         self.pg = Postgres()
-        
-settings : Setting = Setting() 
+
+settings : Setting = Setting()
