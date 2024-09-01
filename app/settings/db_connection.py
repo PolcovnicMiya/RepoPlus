@@ -13,7 +13,7 @@ print(settings.pg.DB_NAME)
 @dataclass
 class DataBaseConnection:
     url: str = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    echo: bool = True
+    echo: bool = False
     echo_pool: bool = False
     pool_size: int = 5
     max_overflow: int = 10

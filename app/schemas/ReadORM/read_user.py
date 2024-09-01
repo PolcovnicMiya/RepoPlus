@@ -1,11 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from app.schemas.user import CreateUserModel
 
 
-class ReadUSerModel(BaseModel):
-    username: str
-    password: str
-    email: EmailStr
-    in_match: bool
+class ReadUSerModel(CreateUserModel):
+    id: int
 
     class Config:
         from_attributes = True
