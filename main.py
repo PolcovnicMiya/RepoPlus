@@ -26,6 +26,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
+    debug=True,
+    title = "BaseConfig",
+    summary="It my Base project for use in future project",
+    description= """  ChimichangApp API helps you do awesome stuff.
+
+                                ## Users
+
+                                You will be able to:
+
+                                CRUD
+
+                                """
 )
 
 app.include_router(all_router)
