@@ -13,14 +13,14 @@ log = logging.getLogger("__name__")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # start
-    log_conf(level=logging.INFO)
+    log_conf(level=logging.DEBUG)
     log.debug(db_session.url)
     log.info("Успешный запуск")
     await create_tables()
     yield
     # finish
     log.info("приложение выключилось")
-    await delete_tables()
+    # await delete_tables()
     await db_session.dispoce()
 
 
