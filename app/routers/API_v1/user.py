@@ -9,21 +9,9 @@ router = APIRouter(
 )
 log = logging.getLogger("__name__")
 
-
 @router.get("/")
 async def user(user_id: int):
     result = await user_repo.get_one(id=user_id)
-    return {"result": result}
-
-@router.post("/users")
-async def user_all(filters:dict = None):
-    result = await user_repo.get_all(filters=filters)
-    return {"result": result}
-
-@router.post("/create")
-async def create_user(data: CreateUserModel):
-    data = data.model_dump()
-    result = await user_repo.add_one(data=data)
     return {"result": result}
 
 
@@ -32,6 +20,13 @@ async def all_users(filt: dict = None):
     if filt:
         log.info(filt)
     result = await user_repo.get_all(filters=filt)
+    return {"result": result}
+
+
+@router.post("/create")
+async def create_user(data: CreateUserModel):
+    data = data.model_dump()
+    result = await user_repo.add_one(data=data)
     return {"result": result}
 
 
