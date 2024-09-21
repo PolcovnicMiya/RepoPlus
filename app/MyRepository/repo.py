@@ -9,7 +9,7 @@ log = logging.getLogger()
 
 class AbstracrRepo(ABC):
     @abstractmethod
-    async def get_one(self, filter):
+    async def get_one(self, filters):
         raise NotImplementedError
 
     async def get_all(self, filters):
@@ -31,16 +31,15 @@ class AbstracrRepo(ABC):
 class SQLAlchemyRepo(AbstracrRepo):
     model = None
 
-    async def get_one(self, **filter):
-        async with db_session.session_factory() as session:
-            stmt = select(self.model).filter_by(**filter)
-            result = await session.execute(stmt)
-            final = result.scalar_one_or_none()
-            if final is not None:
-                return final
+    async def get_one(self,  **filters):
+            async with db_session.session_factory() as session:
+                stmt = select(self.model).filter_by(**filters)
+                result = await session.execute(stmt)
+                final = result.scalar_one_or_none()
+                if final is not None:
+                    return final
 
-
-    async def get_all(self, **filters):
+    async def get_all(self, **filters ):
         async with db_session.session_factory() as session:
             stmt = select(self.model)
             if filters:
@@ -51,7 +50,7 @@ class SQLAlchemyRepo(AbstracrRepo):
             final = [row[0].to_read_model() for row in result.all()]
             return final
 
-    async def add_one(self, data: dict):
+    async def add_one(self, data: dict) :
         async with db_session.session_factory() as session:
             stmt = insert(self.model).values(data).returning(self.model.id)
             result = await session.execute(stmt)
@@ -60,7 +59,7 @@ class SQLAlchemyRepo(AbstracrRepo):
             if final is not None:
                 return final
 
-    async def edit_one(self, data, **filters):
+    async def edit_one(self, data,  **filters):
         async with db_session.session_factory() as session:
             log.debug(data)
             log.debug(filters)
@@ -69,7 +68,7 @@ class SQLAlchemyRepo(AbstracrRepo):
             await session.commit()
             return result.scalar_one_or_none()
         
-    async def edit_some(self, data, **filters):
+    async def edit_some(self, data,  **filters):
         async with db_session.session_factory() as session:
             log.debug(filters)
             log.debug(data)
@@ -79,7 +78,7 @@ class SQLAlchemyRepo(AbstracrRepo):
             final = [row[0].to_read_model() for row in result.all()]
             return final
         
-    async def delete_one(self, **filters):
+    async def delete_one(self,  **filters):
         async with db_session.session_factory() as session:
             log.debug(filters)
             stmt = delete(self.model).filter_by(**filters)
