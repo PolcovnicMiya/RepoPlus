@@ -1,11 +1,8 @@
 import asyncio
-import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient
-from app.helper.tables import create_tables_test, delete_tables_test
-from app.model.base import Base
-from app.settings.db_connection import db_session
+from app.helper.tables import create_tables_test,delete_tables_test
 from main import app
 
 
