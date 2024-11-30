@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter
-from app.MyRepository.user import user_repo
-from app.schemas.user import CreateUserModel
+from app.repository.user import user_repo
+from app.schemas.user_create import CreateUserModel
 
 router = APIRouter(
     prefix="/users",
@@ -9,10 +9,13 @@ router = APIRouter(
 )
 log = logging.getLogger("__name__")
 
+
 @router.get("/")
 async def user(user_id: int):
     result = await user_repo.get_one(id=user_id)
     return {"result": result}
+
+
 
 
 @router.post("/all_users")
@@ -43,8 +46,8 @@ async def edit_some_user(filt: dict, data: CreateUserModel):
     result = await user_repo.edit_some(filters=filt, data=data)
     return {"result": result}
 
-@router.delete("/delete")
-async def delete_user( user_id :int):
-    result = await user_repo.delete_one(id = user_id)
-    return {"result": result}
 
+@router.delete("/delete")
+async def delete_user(user_id: int):
+    result = await user_repo.delete_one(id=user_id)
+    return {"result": result}

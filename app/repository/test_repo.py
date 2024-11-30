@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 import logging
 from sqlalchemy import insert, delete, select, update, text
 from app.settings.db_connection import db_session
-from app.MyRepository.repo import AbstracrRepo
+from app.repository.repo import AbstractRepo
 
 log = logging.getLogger()
 
 
-class SQLAlchemyRepoPlus(AbstracrRepo):
+class SQLAlchemyRepoPlus(AbstractRepo):
     model = None
 
     async def _get_one(self, session_local, **filters):

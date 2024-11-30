@@ -1,8 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-
-class ReadUserModel(BaseModel):
-    id: int
+class CreateUserModel(BaseModel):
     username: str
     password: str
     email: EmailStr
@@ -12,7 +10,7 @@ class ReadUserModel(BaseModel):
     card_number: int
     balance: float
     photo: str
-    is_verified: bool
+    is_verified: bool = False
 
     class Config:
         from_attributes = True

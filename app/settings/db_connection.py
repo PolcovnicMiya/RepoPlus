@@ -63,3 +63,4 @@ class DataBaseConnection:
 
 
 db_session = DataBaseConnection()
+print(db_session.url)

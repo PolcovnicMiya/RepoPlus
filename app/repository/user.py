@@ -9,7 +9,9 @@ class UserRepository(SQLAlchemyRepo):
 
 user_repo = UserRepository()
 
+
 class UserRepositoryPlus(SQLAlchemyRepoPlus):
     model = User
+
 
 user_repo_plus = UserRepositoryPlus()

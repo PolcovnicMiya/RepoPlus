@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  denectrathon_service:
+    container_name: denectrathon_service_container
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:latest
+    container_name: db
+    ports:
+    - "5432:5432"
+    environment:
+      - POSTGRES_DB=main
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=root
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "1G"
+        reservations:
+          memory: "512M"
+    
+
+  redis:
+    container_name: denectrathon_redis_container
+    image: redis:latest
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "256M"
+        reservations:
+          memory: "128M"
+
+volumes:
+  postgres_data:
+  redis_data:

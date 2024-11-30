@@ -4,19 +4,20 @@ import uvicorn
 from fastapi import FastAPI
 from app import router as all_router
 from app.settings.db_connection import db_session
-from app.settings.logging import log_conf
+from app.settings.loggi import log_conf
 from app.helper.tables import create_tables, delete_tables, create_tables_test
+
 
 log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # start
-    log_conf(level=logging.INFO)
+    log_conf(level=logging.ERROR)
     log.debug(db_session.url)
     log.info("Успешный запуск")
     await create_tables()
-    await create_tables_test()
+    # await create_tables_test()
     yield
     # finish
     log.info("приложение выключилось")
@@ -47,6 +48,11 @@ app.include_router(all_router)
 def standart():
     return {"hello": "епт"}
 
-
-if __name__ == "__main__":
-    uvicorn.run(app="main:app", reload=True)
+if __name__ == '__main__':
+    uvicorn.run(
+        app='main:app',
+        host='0.0.0.0',
+        port=8000,
+        reload=True,
+        workers=1
+    )
