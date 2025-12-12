@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from app import router as all_router
 from app.settings.db_connection import db_session
 from app.settings.loggi import log_conf
@@ -43,10 +44,19 @@ app = FastAPI(
                                 """
 )
 
-# Создаем папку для медиа файлов
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],  
+)
+
+
 os.makedirs("media/products", exist_ok=True)
 
-# Подключаем статические файлы
+
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.include_router(all_router)
