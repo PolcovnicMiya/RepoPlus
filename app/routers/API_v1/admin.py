@@ -72,3 +72,52 @@ async def create_mock_cart():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/delete-all-users")
+async def delete_all_users():
+    try:
+        from app.repository.user import user_repo
+        from app.repository.cart import cart_repo
+        
+        # Сначала удаляем все элементы корзины
+        cart_items = await cart_repo.get_all()
+        cart_deleted = 0
+        for item in cart_items:
+            await cart_repo.delete_one(id=item.id)
+            cart_deleted += 1
+        
+        # Затем удаляем всех пользователей
+        users = await user_repo.get_all()
+        users_deleted = 0
+        for user in users:
+            await user_repo.delete_one(id=user.id)
+            users_deleted += 1
+        
+        return {
+            "cart_items_deleted": cart_deleted,
+            "users_deleted": users_deleted,
+            "message": f"Удалено {cart_deleted} элементов корзины и {users_deleted} пользователей"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/delete-all-cart")
+async def delete_all_cart_items():
+    try:
+        from app.repository.cart import cart_repo
+        
+        cart_items = await cart_repo.get_all()
+        deleted_count = 0
+        
+        for item in cart_items:
+            await cart_repo.delete_one(id=item.id)
+            deleted_count += 1
+        
+        return {
+            "deleted_count": deleted_count,
+            "message": f"Удалено {deleted_count} элементов корзины"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

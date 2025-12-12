@@ -125,6 +125,33 @@ async def refresh_token(
     users_service: Annotated[LoginService, Depends(login_service)],
     data: RefreshTokenSchema
 ) -> TokenResponseSchema:
-    """Обновление access токена по refresh токену"""
     result = await users_service.refresh_access_token(data.refresh_token)
     return TokenResponseSchema(**result)
+
+
+@router.delete("/delete-all")
+async def delete_all_users():
+    try:
+        from app.repository.cart import cart_repo
+        
+        # Сначала удаляем все элементы корзины
+        cart_items = await cart_repo.get_all()
+        cart_deleted = 0
+        for item in cart_items:
+            await cart_repo.delete_one(id=item.id)
+            cart_deleted += 1
+        
+        # Затем удаляем всех пользователей
+        users = await user_repo.get_all()
+        users_deleted = 0
+        for user in users:
+            await user_repo.delete_one(id=user.id)
+            users_deleted += 1
+        
+        return {
+            "cart_items_deleted": cart_deleted,
+            "users_deleted": users_deleted,
+            "message": f"Удалено {cart_deleted} элементов корзины и {users_deleted} пользователей"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
