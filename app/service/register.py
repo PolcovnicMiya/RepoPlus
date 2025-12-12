@@ -3,7 +3,8 @@ from typing import Optional
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from app.repository.repo import AbstractRepo
-from app.schemas.registers import RegisterSchema
+from app.schemas.user_create import CreateUserModel
+from app.schemas.register_response import RegisterResponseModel
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -17,32 +18,38 @@ class RegisterService:
         self.user_repo = repository()
         self.jwt = jwt
 
-    async def register(self,data:RegisterSchema)-> Optional[JSONResponse | HTTPException]:
+    async def register(self, data: CreateUserModel) -> RegisterResponseModel:
         try:    
-            name =  await self.user_repo.get_one(username = data.username)
-            phone =  await self.user_repo.get_one(phone = data.phone)
-            email =  await self.user_repo.get_one(email = data.email)
-            print(name, phone,email)
-            if name or phone or email :
+            # Проверяем, существует ли пользователь с такой почтой
+            existing_user = await self.user_repo.get_one(email=data.email)
+            if existing_user:
                 raise HTTPException(
                     status_code=409,
-                    detail="Пользователь с такими данными уже существует!"
+                    detail="Пользователь с такой почтой уже существует!"
                 )
+            
+            # Подготавливаем данные для создания пользователя
             user_dict = data.model_dump()
             user_dict['password'] = self.jwt.hash_password(user_dict['password']).decode('utf-8')
-            result = await self.user_repo.add_one(user_dict)
-            print(result)
-            if result:
-                return HTTPException(
-                    status_code=200,
-                    detail="nice"
+            
+            # Создаем пользователя и получаем его ID
+            user_id = await self.user_repo.add_one(user_dict)
+            
+            if user_id:
+                return RegisterResponseModel(user_id=user_id)
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Ошибка при создании пользователя"
                 )
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(detail=str(e), status_code=500)
 
     async def sendcode(self, id:int)->Optional[JSONResponse | HTTPException]:
         try:
-            code = random.randint(10000,999999)
+            code = random.randint(100000,999999)
             user = await self.user_repo.get_one(id = id)
             if user is None:
                 raise HTTPException (
@@ -54,7 +61,7 @@ class RegisterService:
                     status_code=400,
                     detail = "Пользователь уже верифицирован"
                 )
-            await redis.set(name = f"verify_email:{user.email}", value=code,ex=120)
+            await redis.set(name = f"verify_email:{user.email}", value=code,ex=180)
             message = MIMEMultipart()
             message['FROM'] = settings.smtp.SMTP_EMAIL
             message['TO'] = user.email
@@ -80,24 +87,35 @@ class RegisterService:
               )
         
 
-    async def verify_code(self, data:VerifyCode)->Optional[JSONResponse | HTTPException]:
+    async def verify_code(self, data: VerifyCode) -> Optional[JSONResponse | HTTPException]:
         try:
-            storage_code = await redis.get(f"verify_email:{data.email}")
+            # Получаем пользователя по ID
+            user = await self.user_repo.get_one(id=data.user_id)
+            if user is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Пользователь не найден"
+                )
+            
+            # Проверяем код в Redis по email пользователя
+            storage_code = await redis.get(f"verify_email:{user.email}")
             if storage_code is None:
                 raise HTTPException(
                     status_code=404,
                     detail="Код не был отправлен"
-                    )
+                )
+            
             input_code = str(data.code)
-
             if storage_code.decode('utf-8') != input_code:
                 raise HTTPException(
                     status_code=400,
-                    detail="Не правильный код"
+                    detail="Неправильный код"
                 )
             
-            await self.user_repo.edit_one({'is_verified' : True}, email = data.email)
-            await redis.delete(f"verify_email:{data.email}")
+            # Обновляем статус верификации пользователя
+            await self.user_repo.edit_one({'is_verified': True}, id=data.user_id)
+            await redis.delete(f"verify_email:{user.email}")
+            
             return JSONResponse(
                 status_code=200,
                 content={"message": "Пользователь подтвержден!"}

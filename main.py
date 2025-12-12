@@ -2,10 +2,12 @@ import logging
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app import router as all_router
 from app.settings.db_connection import db_session
 from app.settings.loggi import log_conf
 from app.helper.tables import create_tables, delete_tables, create_tables_test
+import os
 
 
 log = logging.getLogger(__name__)
@@ -40,6 +42,12 @@ app = FastAPI(
 
                                 """
 )
+
+# Создаем папку для медиа файлов
+os.makedirs("media/products", exist_ok=True)
+
+# Подключаем статические файлы
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.include_router(all_router)
 

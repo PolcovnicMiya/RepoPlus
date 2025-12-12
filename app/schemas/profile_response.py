@@ -1,10 +1,11 @@
 from pydantic import BaseModel, EmailStr
 
-class CreateUserModel(BaseModel):
+
+class ProfileResponseModel(BaseModel):
+    id: int
+    email: EmailStr
     name: str
     lastname: str
-    email: EmailStr
-    password: str
 
     class Config:
         from_attributes = True

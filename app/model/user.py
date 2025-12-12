@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import BigInteger, Column
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, String, DateTime, Boolean
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from app.model.base import Base
 
@@ -12,17 +13,15 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    username: Mapped[str] = mapped_column(unique=True)
-    password: Mapped[str]
-    email: Mapped[str] = mapped_column(unique=True)
-    phone: Mapped[int] = mapped_column(BigInteger, unique=True)
-    name: Mapped[str] = mapped_column(nullable=False)
-    lastname: Mapped[str] = mapped_column(nullable=False)
-    card_number: Mapped[int] = mapped_column(BigInteger, nullable=True)
-    balance: Mapped[float] = mapped_column(default=0.0)
-    photo: Mapped[str] = mapped_column(nullable=True)
-    is_verified: Mapped[bool] = mapped_column(default=False)
-    role: Mapped[int] = mapped_column(default=0)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    lastname: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    doc: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)  # дата создания
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    
+    # Связь с корзиной
+    cart_items: Mapped[list["CartItem"]] = relationship("CartItem", back_populates="user")
 
     @classmethod
     async def delete_unverified_users(cls, session):
@@ -38,19 +37,15 @@ class User(Base):
 
     def to_read_model(self) -> ReadUserModel:
         """
-        Преобразует объект пользователя в ReadUserMode
+        Преобразует объект пользователя в ReadUserModel
         """
         return ReadUserModel(
             id=self.id,
-            username=self.username,
-            password=self.password,
-            email=self.email,
-            phone=self.phone,
             name=self.name,
             lastname=self.lastname,
-            card_number=self.card_number,
-            balance=self.balance,
-            photo=self.photo,
+            email=self.email,
+            password=self.password,
+            doc=self.doc,
             is_verified=self.is_verified
         )
 

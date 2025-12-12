@@ -1,6 +1,6 @@
 from typing import Annotated
-from pydantic import EmailStr, BaseModel
+from pydantic import BaseModel
 
 class VerifyCode(BaseModel):
-    email : EmailStr
-    code : Annotated[int , None]
+    user_id: int
+    code: Annotated[int, None]
