@@ -1,4 +1,5 @@
 import random
+from datetime import datetime, timedelta
 from typing import List
 from fastapi import HTTPException
 from app.repository.user import user_repo
@@ -14,10 +15,11 @@ class MockDataService:
         self.cart_repo = cart_repo
 
     async def create_mock_users(self) -> List[dict]:
+        """Создает 5 моковых пользователей"""
         mock_users = [
             {
                 "name": "Алексей",
-                "lastname": "Иванов", 
+                "lastname": "Иванов",
                 "email": "alexey.ivanov@example.com",
                 "password": jwt_use.hash_password("password123").decode('utf-8'),
                 "is_verified": True
@@ -25,7 +27,7 @@ class MockDataService:
             {
                 "name": "Мария",
                 "lastname": "Петрова",
-                "email": "maria.petrova@example.com", 
+                "email": "maria.petrova@example.com",
                 "password": jwt_use.hash_password("password123").decode('utf-8'),
                 "is_verified": True
             },
@@ -37,7 +39,7 @@ class MockDataService:
                 "is_verified": False
             },
             {
-                "name": "Анна", 
+                "name": "Анна",
                 "lastname": "Козлова",
                 "email": "anna.kozlova@example.com",
                 "password": jwt_use.hash_password("password123").decode('utf-8'),
@@ -55,19 +57,23 @@ class MockDataService:
         created_users = []
         for user_data in mock_users:
             try:
+                # Проверяем, существует ли пользователь с таким email
                 existing_user = await self.user_repo.get_one(email=user_data["email"])
                 if existing_user:
+                    print(f"Пользователь с email {user_data['email']} уже существует")
                     created_users.append(existing_user)
                     continue
                     
                 user = await self.user_repo.add_one(data=user_data)
                 created_users.append(user)
+                print(f"Создан пользователь: {user_data['name']} {user_data['lastname']}")
             except Exception as e:
-                pass
+                print(f"Ошибка создания пользователя {user_data['email']}: {e}")
                 
         return created_users
 
     async def create_mock_products(self) -> List[dict]:
+        """Создает 5 моковых продуктов"""
         mock_products = [
             {
                 "name": "Эспрессо",
@@ -84,7 +90,7 @@ class MockDataService:
                 "description": "Нежный капучино с воздушной молочной пенкой и корицей",
                 "price": 220.00,
                 "old_price": None,
-                "image_filename": "cappuccino.jpg", 
+                "image_filename": "cappuccino.jpg",
                 "is_available": True,
                 "rating": 88,
                 "reviews_count": 89
@@ -124,22 +130,27 @@ class MockDataService:
         created_products = []
         for product_data in mock_products:
             try:
+                # Проверяем, существует ли продукт с таким названием
                 existing_product = await self.product_repo.get_one(name=product_data["name"])
                 if existing_product:
+                    print(f"Продукт {product_data['name']} уже существует")
                     created_products.append(existing_product)
                     continue
                     
                 product = await self.product_repo.add_one(data=product_data)
                 created_products.append(product)
+                print(f"Создан продукт: {product_data['name']}")
             except Exception as e:
-                pass
+                print(f"Ошибка создания продукта {product_data['name']}: {e}")
                 
         return created_products
 
     async def create_mock_cart_items(self, users: List[dict], products: List[dict]) -> List[dict]:
+        """Создает 5 моковых элементов корзины"""
         if not users or not products:
             raise HTTPException(status_code=400, detail="Нет пользователей или продуктов для создания корзины")
         
+        # Варианты настроек для кофе
         size_options = [
             {"type": "small", "modifier": 0.0},
             {"type": "medium", "modifier": 20.0},
@@ -177,11 +188,16 @@ class MockDataService:
             syrup = random.choice(syrup_options)
             quantity = random.randint(1, 3)
             
+            # Рассчитываем итоговую цену
+            # Проверяем, является ли product объектом или ID
             if hasattr(product, 'price'):
                 base_price = float(product.price)
                 user_id = user.id if hasattr(user, 'id') else user
                 product_id = product.id if hasattr(product, 'id') else product
+                product_name = product.name if hasattr(product, 'name') else f"Product {product_id}"
+                user_name = user.name if hasattr(user, 'name') else f"User {user_id}"
             else:
+                # Если это ID, получаем объект из БД
                 product_obj = await self.product_repo.get_one(id=product)
                 user_obj = await self.user_repo.get_one(id=user)
                 if not product_obj or not user_obj:
@@ -189,6 +205,8 @@ class MockDataService:
                 base_price = float(product_obj.price)
                 user_id = user_obj.id
                 product_id = product_obj.id
+                product_name = product_obj.name
+                user_name = user_obj.name
             
             total_modifiers = size["modifier"] + coffee["modifier"] + milk["modifier"] + syrup["modifier"]
             total_price = (base_price + total_modifiers) * quantity
@@ -212,28 +230,48 @@ class MockDataService:
             try:
                 cart_item = await self.cart_repo.add_one(data=cart_item_data)
                 created_cart_items.append(cart_item)
+                print(f"Создан элемент корзины: {product_name} для пользователя {user_name}")
             except Exception as e:
-                pass
+                print(f"Ошибка создания элемента корзины: {e}")
                 
         return created_cart_items
 
     async def create_all_mock_data(self) -> dict:
+        """Создает все моковые данные"""
         try:
+            print("🚀 Начинаем создание моковых данных...")
+            
+            # Создаем пользователей
+            print("👥 Создаем пользователей...")
             users = await self.create_mock_users()
+            
+            # Создаем продукты
+            print("☕ Создаем продукты...")
             products = await self.create_mock_products()
+            
+            # Получаем все созданные объекты из БД для корзины
+            print("🔍 Получаем созданные объекты из БД...")
             all_users = await self.user_repo.get_all()
             all_products = await self.product_repo.get_all()
+            
+            # Создаем элементы корзины
+            print("🛒 Создаем элементы корзины...")
             cart_items = await self.create_mock_cart_items(all_users, all_products)
             
-            return {
+            result = {
                 "users_created": len(users),
                 "products_created": len(products),
                 "cart_items_created": len(cart_items),
                 "message": "Моковые данные успешно созданы!"
             }
             
+            print("✅ Моковые данные созданы успешно!")
+            return result
+            
         except Exception as e:
+            print(f"❌ Ошибка создания моковых данных: {e}")
             raise HTTPException(status_code=500, detail=f"Ошибка создания моковых данных: {str(e)}")
 
 
+# Создаем экземпляр сервиса
 mock_data_service = MockDataService()

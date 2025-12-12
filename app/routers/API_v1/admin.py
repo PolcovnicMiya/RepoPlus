@@ -9,6 +9,12 @@ router = APIRouter(
 
 @router.post("/create-mock-data")
 async def create_mock_data():
+    """
+    Создает моковые данные для всех сущностей:
+    - 5 пользователей
+    - 5 продуктов (кофе)
+    - 5 элементов корзины с различными настройками
+    """
     try:
         result = await mock_data_service.create_all_mock_data()
         return result
@@ -18,6 +24,7 @@ async def create_mock_data():
 
 @router.post("/create-mock-users")
 async def create_mock_users():
+    """Создает только моковых пользователей"""
     try:
         users = await mock_data_service.create_mock_users()
         return {
@@ -30,6 +37,7 @@ async def create_mock_users():
 
 @router.post("/create-mock-products")
 async def create_mock_products():
+    """Создает только моковые продукты"""
     try:
         products = await mock_data_service.create_mock_products()
         return {
@@ -42,7 +50,9 @@ async def create_mock_products():
 
 @router.post("/create-mock-cart")
 async def create_mock_cart():
+    """Создает моковые элементы корзины (требует существующих пользователей и продуктов)"""
     try:
+        # Получаем существующих пользователей и продукты
         from app.repository.user import user_repo
         from app.repository.product import product_repo
         

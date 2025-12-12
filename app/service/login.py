@@ -128,8 +128,10 @@ class LoginService:
             await redis.set(
                 refresh_redis_key,
                 refresh_token, 
-                ex=settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS * 24 * 60
+                ex=settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS * 24 * 60  # конвертируем дни в минуты
             )
+            print(f"🔍 Saved refresh token with key: {refresh_redis_key}")
+            print(f"🔍 Refresh token length: {len(refresh_token)}")
             
             # Проверяем, что токен действительно сохранился
             saved_token = await redis.get(redis_key)
@@ -148,10 +150,14 @@ class LoginService:
             raise HTTPException(detail=str(e), status_code=500)
 
     async def refresh_access_token(self, refresh_token: str):
+        """Обновление access токена по refresh токену"""
         try:
+            # Декодируем refresh токен
             try:
                 payload = self.jwt.decode_jwt(refresh_token)
+                print(f"🔍 Decoded payload: {payload}")
             except Exception as jwt_error:
+                print(f"❌ JWT decode error: {jwt_error}")
                 raise HTTPException(
                     status_code=401,
                     detail=f"Invalid refresh token: {str(jwt_error)}"
@@ -160,37 +166,52 @@ class LoginService:
             user_id = payload.get('id')
             session_id = payload.get("session_id")
             
+            print(f"🔍 User ID: {user_id}, Session ID: {session_id}")
+            
             if session_id is None or user_id is None:
                 raise HTTPException(
                     status_code=401,
                     detail="Invalid refresh token payload"
                 )
             
+            # Проверяем refresh токен в Redis
             refresh_redis_key = f"jwt_refresh_user_id:{str(user_id)}_session_id:{str(session_id)}"
+            print(f"🔍 Looking for refresh token with key: {refresh_redis_key}")
             
             try:
                 stored_refresh_token = await redis.get(refresh_redis_key)
+                print(f"🔍 Stored refresh token found: {stored_refresh_token is not None}")
                 if stored_refresh_token:
+                    # Декодируем bytes в строку если нужно
                     if isinstance(stored_refresh_token, bytes):
                         stored_refresh_token = stored_refresh_token.decode('utf-8')
+                        print(f"🔍 Decoded bytes to string")
+                    print(f"🔍 Stored token length: {len(stored_refresh_token)}")
+                    print(f"🔍 Input token length: {len(refresh_token)}")
             except Exception as e:
+                print(f"❌ Redis error: {e}")
                 raise HTTPException(
                     status_code=500,
                     detail=f"Redis connection error: {e}"
                 )
             
             if stored_refresh_token is None:
+                # Попробуем найти все ключи для этого пользователя
+                all_keys = await redis.keys(f"*user_id:{str(user_id)}*")
+                print(f"🔍 All keys for user {user_id}: {all_keys}")
                 raise HTTPException(
                     status_code=401,
                     detail="Refresh token not found or expired"
                 )
             
+            # Проверяем, что переданный токен совпадает с сохраненным
             if stored_refresh_token != refresh_token:
                 raise HTTPException(
                     status_code=401,
                     detail="Invalid refresh token"
                 )
             
+            # Получаем пользователя из базы данных
             user = await self.user_repo.get_one(id=user_id)
             if user is None:
                 raise HTTPException(
@@ -198,6 +219,7 @@ class LoginService:
                     detail="User not found"
                 )
             
+            # Создаем новый access токен с тем же session_id
             new_payload = {
                 "id": user.id,
                 "email": user.email,
@@ -211,6 +233,7 @@ class LoginService:
                 session_id=session_id
             )
             
+            # Обновляем access токен в Redis
             access_redis_key = f"jwt_user_id:{str(user.id)}_session_id:{str(session_id)}"
             await redis.set(
                 access_redis_key,
@@ -218,14 +241,17 @@ class LoginService:
                 ex=settings.jwt_config.ACCESS_TOKEN_EXPIRE_IN_MINUTES
             )
             
+            print(f"✅ Successfully refreshed token for user {user_id}")
+            
             return {
                 "access_token": new_access_token,
-                "refresh_token": refresh_token
+                "refresh_token": refresh_token  # возвращаем тот же refresh токен
             }
             
         except HTTPException:
             raise
         except Exception as e:
+            print(f"❌ Unexpected error: {e}")
             raise HTTPException(detail=str(e), status_code=500)
     
 

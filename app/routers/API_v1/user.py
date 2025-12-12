@@ -40,9 +40,21 @@ async def all_users(filt: dict = None):
 
 @router.post("/create")
 async def create_user(data: CreateUserModel):
-    data = data.model_dump()
-    result = await user_repo.add_one(data=data)
-    return {"result": result}
+    try:
+        existing_user = await user_repo.get_one(email=data.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=409,
+                detail="Пользователь с такой почтой уже существует!"
+            )
+        
+        data_dict = data.model_dump()
+        result = await user_repo.add_one(data=data_dict)
+        return {"result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # @router.put("/edit")
