@@ -5,7 +5,6 @@ __pycache__/
 
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/
@@ -146,7 +145,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
 # pytype static type analyzer
 .pytype/
 
@@ -165,4 +163,3 @@ cython_debug/
 .pylintrc
 poetry.lock
 pyproject.toml
-keys
