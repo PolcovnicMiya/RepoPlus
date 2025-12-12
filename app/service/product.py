@@ -144,12 +144,10 @@ class ProductService:
             filename = f"product_{product_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
             file_path = os.path.join(media_dir, filename)
             
-            # Сохраняем файл
             with open(file_path, "wb") as buffer:
                 content = await file.read()
                 buffer.write(content)
             
-            # Обновляем товар с новым именем файла
             await self.product_repo.edit_one({"image_filename": filename}, id=product_id)
             
             return {"filename": filename, "message": "Изображение успешно загружено"}

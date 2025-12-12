@@ -63,9 +63,9 @@ class LoginService:
                                         value = access_token, 
                                         ex = settings.jwt_config.ACCESS_TOKEN_EXPIRE_IN_MINUTES) 
             
-            await redis.set(name = f"jwt_user_id:{str(user.id)}_session_id:{str(session_id)}",
+            await redis.set(name = f"jwt_refresh_user_id:{str(user.id)}_session_id:{str(session_id)}",
                                         value = refresh_token, 
-                                        ex = settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS) 
+                                        ex = settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS * 24 * 60) 
             
             return{"access_token": access_token, "refresh_token": refresh_token}
             
@@ -124,10 +124,11 @@ class LoginService:
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Redis error: {e}") 
             
+            refresh_redis_key = f"jwt_refresh_user_id:{str(user.id)}_session_id:{str(session_id)}"
             await redis.set(
-                f"jwt_refresh_user_id:{str(user.id)}_session_id:{str(session_id)}",
+                refresh_redis_key,
                 refresh_token, 
-                ex=settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS * 24 * 60  # конвертируем дни в минуты
+                ex=settings.jwt_config.REFRESH_TOKEN_EXPIRE_IN_DAYS * 24 * 60
             )
             
             # Проверяем, что токен действительно сохранился
@@ -139,6 +140,87 @@ class LoginService:
                 "access_token": access_token, 
                 "refresh_token": refresh_token,
                 "user_id": user.id
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(detail=str(e), status_code=500)
+
+    async def refresh_access_token(self, refresh_token: str):
+        try:
+            try:
+                payload = self.jwt.decode_jwt(refresh_token)
+            except Exception as jwt_error:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Invalid refresh token: {str(jwt_error)}"
+                )
+            
+            user_id = payload.get('id')
+            session_id = payload.get("session_id")
+            
+            if session_id is None or user_id is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid refresh token payload"
+                )
+            
+            refresh_redis_key = f"jwt_refresh_user_id:{str(user_id)}_session_id:{str(session_id)}"
+            
+            try:
+                stored_refresh_token = await redis.get(refresh_redis_key)
+                if stored_refresh_token:
+                    if isinstance(stored_refresh_token, bytes):
+                        stored_refresh_token = stored_refresh_token.decode('utf-8')
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Redis connection error: {e}"
+                )
+            
+            if stored_refresh_token is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Refresh token not found or expired"
+                )
+            
+            if stored_refresh_token != refresh_token:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid refresh token"
+                )
+            
+            user = await self.user_repo.get_one(id=user_id)
+            if user is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="User not found"
+                )
+            
+            new_payload = {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "lastname": user.lastname
+            }
+            
+            new_access_token = self.jwt.encode_jwt(
+                payload=new_payload,
+                access=True,
+                session_id=session_id
+            )
+            
+            access_redis_key = f"jwt_user_id:{str(user.id)}_session_id:{str(session_id)}"
+            await redis.set(
+                access_redis_key,
+                new_access_token, 
+                ex=settings.jwt_config.ACCESS_TOKEN_EXPIRE_IN_MINUTES
+            )
+            
+            return {
+                "access_token": new_access_token,
+                "refresh_token": refresh_token
             }
             
         except HTTPException:

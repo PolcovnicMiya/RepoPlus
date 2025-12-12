@@ -9,6 +9,7 @@ from app.schemas.user_create import CreateUserModel
 from app.schemas.register_response import RegisterResponseModel
 from app.schemas.login_email import LoginEmailSchema
 from app.schemas.profile_response import ProfileResponseModel
+from app.schemas.refresh_token import RefreshTokenSchema, TokenResponseSchema
 from app.service.login import LoginService
 from app.service.register import RegisterService
 from app.secure.autificate import get_auth_user
@@ -44,24 +45,24 @@ async def create_user(data: CreateUserModel):
     return {"result": result}
 
 
-@router.put("/edit")
-async def edit_user(filt: dict, data: CreateUserModel):
-    data = data.model_dump()
-    result = await user_repo.edit_one(filters=filt, data=data)
-    return {"result": result}
+# @router.put("/edit")
+# async def edit_user(filt: dict, data: CreateUserModel):
+#     data = data.model_dump()
+#     result = await user_repo.edit_one(filters=filt, data=data)
+#     return {"result": result}
 
 
-@router.put("/edit_some")
-async def edit_some_user(filt: dict, data: CreateUserModel):
-    data = data.model_dump()
-    result = await user_repo.edit_some(filters=filt, data=data)
-    return {"result": result}
+# @router.put("/edit_some")
+# async def edit_some_user(filt: dict, data: CreateUserModel):
+#     data = data.model_dump()
+#     result = await user_repo.edit_some(filters=filt, data=data)
+#     return {"result": result}
 
 
-@router.delete("/delete")
-async def delete_user(user_id: int):
-    result = await user_repo.delete_one(id=user_id)
-    return {"result": result}
+# @router.delete("/delete")
+# async def delete_user(user_id: int):
+#     result = await user_repo.delete_one(id=user_id)
+#     return {"result": result}
 
 
 @router.post("/register", response_model=RegisterResponseModel)
@@ -105,3 +106,13 @@ async def verify_code(
 ):
     result = await user_service.verify_code(data=data)
     return result
+
+
+@router.post("/refresh", response_model=TokenResponseSchema)
+async def refresh_token(
+    users_service: Annotated[LoginService, Depends(login_service)],
+    data: RefreshTokenSchema
+) -> TokenResponseSchema:
+    """Обновление access токена по refresh токену"""
+    result = await users_service.refresh_access_token(data.refresh_token)
+    return TokenResponseSchema(**result)
