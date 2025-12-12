@@ -10,6 +10,12 @@ services:
     depends_on:
       - db
       - redis
+    environment:
+      BD_HOST: db
+      BD_PORT: 5432
+      BD_PASS: root
+      BD_USER: admin
+      BD_NAME: main
 
   db:
     image: postgres:latest

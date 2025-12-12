@@ -35,7 +35,7 @@ class RegisterService:
             if result:
                 return HTTPException(
                     status_code=200,
-                    detail="Ахуеть махуеть все норм"
+                    detail="nice"
                 )
         except Exception as e:
             raise HTTPException(detail=str(e), status_code=500)

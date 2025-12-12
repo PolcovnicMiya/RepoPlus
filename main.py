@@ -46,7 +46,7 @@ app.include_router(all_router)
 
 @app.get("/")
 def standart():
-    return {"hello": "епт"}
+    return {"hello": "IITU"}
 
 if __name__ == '__main__':
     uvicorn.run(
